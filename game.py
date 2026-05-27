@@ -117,7 +117,7 @@ except:
     ore_overlay_img = create_dummy_surface(TILE_SIZE, TILE_SIZE, (255, 255, 0))
 
 pickaxe_img = create_dummy_surface(32, 32, GOLD)
-pygame.draw.rect(pickaxe_img, (150, 75, 0), (0, 20, 32, 8)) 
+pygame.draw.rect("pixil-frame-0_4.png", (150, 75, 0), (0, 20, 32, 8)) 
 jetpack_fire_img = create_dummy_surface(16, 24, (255, 100, 0))
 
 TILES = {}
