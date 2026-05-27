@@ -59,6 +59,7 @@ shop_items = {
 
 current_state = "GAME"
 current_tab = "ENCHANTY"
+sell_page = 0  # Added page index for dividing the 11 ores into clean segments
 
 class Button:
     def __init__(self, text, x, y, w, h, color, accent, border=2):
@@ -89,6 +90,10 @@ btn_open_sell = Button("SPRZEDAŻ", 145, 15, 120, 35, PANEL_DARK, SUCCESS)
 btn_close_ui = Button("POWRÓT DO GRY", WIDTH - 190, 15, 175, 35, (40, 40, 50), CYAN)
 btn_sell_all = Button("SPRZEDAJ WSZYSTKO", WIDTH - 430, 15, 220, 35, DANGER, WHITE)
 
+# Pagination Buttons for Sell UI
+btn_prev_page = Button("<", 30, HEIGHT - 70, 60, 40, PANEL_DARK, CYAN)
+btn_next_page = Button(">", WIDTH - 90, HEIGHT - 70, 60, 40, PANEL_DARK, CYAN)
+
 TILE_SIZE = 64
 PLAYER_WIDTH, PLAYER_HEIGHT = 54, 54
 
@@ -98,9 +103,10 @@ def create_dummy_surface(w, h, color):
     return s
 
 try:
-    planet_img = pygame.image.load("image.png").convert_alpha()
+    planet_img = pygame.image.load("enlarged.png").convert_alpha()
+    planet_img = pygame.transform.scale(planet_img, (140, 80))
 except:
-    planet_img = create_dummy_surface(200, 200, (100, 50, 150))
+    planet_img = create_dummy_surface(140, 80, (100, 50, 150))
 
 try:
     player_img_right = pygame.image.load("image_prawo.png").convert_alpha()
@@ -116,10 +122,9 @@ try:
 except:
     ore_overlay_img = create_dummy_surface(TILE_SIZE, TILE_SIZE, (255, 255, 0))
 
-# --- TUTAJ NASTĄPIŁA ZMIANA: Ładowanie pliku tekstury kilofa ---
 try:
     pickaxe_img = pygame.image.load("pixil-frame-0_4.png").convert_alpha()
-    pickaxe_img = pygame.transform.scale(pickaxe_img, (32, 32)) # Skalowanie kilofa do zgrabnego rozmiaru 32x32
+    pickaxe_img = pygame.transform.scale(pickaxe_img, (32, 32)) 
 except:
     pickaxe_img = create_dummy_surface(32, 32, GOLD)
     pygame.draw.rect(pickaxe_img, (150, 75, 0), (0, 20, 32, 8)) 
@@ -156,7 +161,6 @@ for i in range(40):
 
 stars = [[random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 3), random.uniform(0.02, 0.1)] for _ in range(150)]
 
-
 player_x, player_y = 100, 200 - PLAYER_HEIGHT
 speed = 5
 FLOOR_Y = 260 
@@ -174,9 +178,7 @@ TERMINAL_VELOCITY = 10
 JETPACK_THRUST = -0.9 
 is_using_jetpack = False
 
-
 def get_mining_power():
-    """Zwraca siłę kopania gracza na podstawie zakupionych enchantów."""
     power = 1
     for item in shop_items["ENCHANTY"]:
         if item["name"] in inventory:
@@ -227,19 +229,24 @@ def get_collidable_rects(p_x, p_y):
 def get_sell_cards():
     cards = []
     padding_x, padding_y = 50, 120
-    card_height, card_spacing = 90, 20
+    card_height, card_spacing = 130, 25  # Expanded height so everything is clear and comfortably inside the window boundaries
     cols = 2
-    card_width = (WIDTH - padding_x * 2 - 20) // cols
+    card_width = (WIDTH - padding_x * 2 - 30) // cols
     btn_w = 140
-    for idx, (name, data) in enumerate(ores.items()):
+    
+    ore_items = list(ores.items())
+    start_idx = sell_page * 6
+    end_idx = start_idx + 6
+    page_items = ore_items[start_idx:end_idx]
+
+    for idx, (name, data) in enumerate(page_items):
         row, col = idx // cols, idx % cols
-        x = padding_x + col * (card_width + 20)
+        x = padding_x + col * (card_width + 30)
         y = padding_y + row * (card_height + card_spacing)
         card = pygame.Rect(x, y, card_width, card_height)
-        button = pygame.Rect(card.right - btn_w - 20, y + 20, btn_w, 50)
+        button = pygame.Rect(card.right - btn_w - 20, y + (card_height // 2) - 25, btn_w, 50)
         cards.append((name, data, card, button))
     return cards
-
 
 def draw_stars():
     screen.fill(BG_DEEP)
@@ -295,14 +302,28 @@ def draw_sell():
     draw_header()
     btn_sell_all.draw(screen)
     
+    # Calculate total expected pages
+    total_pages = math.ceil(len(ores) / 6)
+    
     for name, data, card, s_btn in get_sell_cards():
         pygame.draw.rect(screen, PANEL_DARK, card, border_radius=15)
-        screen.blit(font_main.render(f"{data['label']}", True, WHITE), (card.x + 30, card.y + 20))
-        screen.blit(font_small.render(f"ILOSC: {data['qty']} (Cena: {data['price']}$)", True, CYAN), (card.x + 30, card.y + 50))
+        pygame.draw.rect(screen, CYAN, card, 1, border_radius=15) # Border for cleaner style
+        screen.blit(font_main.render(f"{data['label']}", True, WHITE), (card.x + 25, card.y + 30))
+        screen.blit(font_small.render(f"ILOSC: {data['qty']}", True, CYAN), (card.x + 25, card.y + 65))
+        screen.blit(font_small.render(f"Cena: {data['price']}$", True, GOLD), (card.x + 25, card.y + 85))
+        
         pygame.draw.rect(screen, SUCCESS if data['qty'] > 0 else (60,60,60), s_btn, border_radius=8)
         label = font_main.render("SPRZEDAJ 1", True, WHITE)
         screen.blit(label, (s_btn.centerx - label.get_width()//2, s_btn.centery - label.get_height()//2))
-
+        
+    # Draw Pagination System UI elements at the bottom
+    if sell_page > 0:
+        btn_prev_page.draw(screen)
+    if sell_page < total_pages - 1:
+        btn_next_page.draw(screen)
+        
+    page_txt = font_main.render(f"Strona {sell_page + 1} / {total_pages}", True, WHITE)
+    screen.blit(page_txt, (WIDTH // 2 - page_txt.get_width() // 2, HEIGHT - 60))
 
 running = True
 while running:
@@ -331,10 +352,17 @@ while running:
                                     inventory.append(item["name"])
                                     
             elif current_state == "SELL":
+                total_pages = math.ceil(len(ores) / 6)
                 if btn_sell_all.clicked(event):
                     for name in ores:
                         wallet += ores[name]["qty"] * ores[name]["price"]
                         ores[name]["qty"] = 0
+                
+                if sell_page > 0 and btn_prev_page.clicked(event):
+                    sell_page -= 1
+                if sell_page < total_pages - 1 and btn_next_page.clicked(event):
+                    sell_page += 1
+
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for name, data, card, s_btn in get_sell_cards():
                         if s_btn.collidepoint(event.pos) and data["qty"] > 0:
@@ -429,7 +457,7 @@ while running:
             star_y = (star[1] - cam_y * star[3] * 0.5) % HEIGHT
             pygame.draw.circle(screen, (200, 200, 255) if star[2] > 1 else (100, 100, 150), (int(star_x), int(star_y)), star[2])
 
-        screen.blit(planet_img, (math.floor(-cam_x * 0.2) + (WIDTH // 2 - 100), math.floor(-cam_y * 0.1) + 80))
+        screen.blit(planet_img, (math.floor(-cam_x * 0.2) + (WIDTH // 2 - 70), math.floor(-cam_y * 0.1) + 80))
         
         for ast in bg_asteroids:
             ast_screen_x = ast['wx'] - cam_x * ast['factor']
