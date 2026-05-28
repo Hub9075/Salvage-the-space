@@ -1,0 +1,45 @@
+{
+    "wallet": 0,
+    "upgrades_inventory": [],
+    "hunger": 83.51499999999938,
+    "thirst": 78.02000000000437,
+    "fuel": 0.0,
+    "player_x": 2187,
+    "player_y": 206,
+    "player_inventory": {
+        "chleb": 0,
+        "kurczak": 0,
+        "woda": 0,
+        "paliwo_kanister": 0
+    },
+    "ores_qty": {
+        "coal": 0,
+        "iron": 1,
+        "quartz": 0,
+        "lapiz": 0,
+        "gold": 0,
+        "emerald": 0,
+        "rubin": 0,
+        "sapphire": 0,
+        "diament": 0,
+        "uran": 0,
+        "alien_ore": 0
+    },
+    "world_map": {
+        "8,0": "air",
+        "7,0": "air",
+        "8,1": "air",
+        "9,2": "air",
+        "9,1": "air",
+        "10,1": "air",
+        "11,2": "air",
+        "11,1": "air",
+        "12,1": "air",
+        "13,2": "air",
+        "12,2": "air",
+        "12,3": "air",
+        "11,3": "air",
+        "38,0": "air",
+        "38,1": "air"
+    }
+}
